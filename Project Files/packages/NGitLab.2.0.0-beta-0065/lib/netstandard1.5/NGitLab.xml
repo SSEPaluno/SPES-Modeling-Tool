@@ -1,0 +1,150 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>NGitLab</name>
+    </assembly>
+    <members>
+        <member name="T:NGitLab.GitLabClient">
+            <summary>
+            Class that implements <see cref="T:NGitLab.IGitLabClient"/> that can be used to communicate with a GitLab Server.
+            </summary>
+        </member>
+        <member name="M:NGitLab.GitLabClient.LoginAsync(System.String,System.String)">
+            <summary>
+            Login to the GitLab host.
+            </summary>
+            <param name="username">GitLab Username.</param>
+            <param name="password">GitLab Password.</param>
+            <returns><see cref="T:NGitLab.Models.Session"/> object with the current session information.</returns>
+        </member>
+        <member name="P:NGitLab.Impl.HttpRequestor.HostUrl">
+            <summary>
+            GitLab Host url as a string.
+            </summary>
+        </member>
+        <member name="P:NGitLab.Impl.HttpRequestor.Client">
+            <summary>
+            <see cref="T:System.Net.Http.HttpClient"/> used to make requests.
+            </summary>
+        </member>
+        <member name="M:NGitLab.Impl.HttpRequestor.With(System.Object)">
+            <summary>
+            Fluid API method to add Data to the http request call.
+            </summary>
+            <param name="data">The data that will be serialized and sent to the http endpoint.</param>
+        </member>
+        <member name="M:NGitLab.Impl.HttpRequestor.Put``1(System.String)">
+            <summary>
+            Sends a PUT request to the specified URI.
+            </summary>
+            <typeparam name="T">Type of the response value.</typeparam>
+            <param name="tailApiUrl">The specified api url</param>
+            <returns>Returns the deserialized response or throws a <see cref="T:NGitLab.Impl.GitLabException"/>.</returns>
+        </member>
+        <member name="M:NGitLab.Impl.HttpRequestor.Post``1(System.String)">
+            <summary>
+            Sends a POST request to the specified URI.
+            </summary>
+            <typeparam name="T">Type of the response value.</typeparam>
+            <param name="tailApiUrl">The specified api url</param>
+            <returns>Returns the deserialized response or throws a <see cref="T:NGitLab.Impl.GitLabException"/>.</returns>
+        </member>
+        <member name="M:NGitLab.Impl.HttpRequestor.Delete(System.String)">
+            <summary>
+            Sends a DELETE request to the specified URI.
+            </summary>
+            <typeparam name="T">Type of the response value.</typeparam>
+            <param name="tailApiUrl">The specified api url</param>
+        </member>
+        <member name="M:NGitLab.Impl.HttpRequestor.Get``1(System.String)">
+            <summary>
+            Sends a GET request to the specified URI.
+            </summary>
+            <typeparam name="T">Type of the response value.</typeparam>
+            <param name="tailApiUrl">The specified api url</param>
+            <returns>Returns the deserialized response or throws a <see cref="T:NGitLab.Impl.GitLabException"/>.</returns>
+        </member>
+        <member name="M:NGitLab.IIssueClient.Owned">
+            <summary>
+            Get a list of all project issues
+            </summary>
+        </member>
+        <member name="M:NGitLab.IIssueClient.ForProject(System.Int32)">
+            <summary>
+            Get a list of issues for the specified project.
+            </summary>
+        </member>
+        <member name="M:NGitLab.IIssueClient.GetAsync(System.Int32,System.Int32)">
+            <summary>
+            Return a single issue for a project given project.
+            </summary>
+        </member>
+        <member name="M:NGitLab.IIssueClient.CreateAsync(NGitLab.Models.IssueCreate)">
+            <summary>
+            Add an issue witht he proposed title to the GitLab list for the selected proejct id.
+            </summary>
+        </member>
+        <member name="M:NGitLab.IIssueClient.EditAsync(NGitLab.Models.IssueEdit)">
+            <summary>
+            Edit and save an issue.
+            </summary>
+        </member>
+        <member name="M:NGitLab.ILabelClient.ForProject(System.Int32)">
+            <summary>
+            Return a list of labels for a project.
+            </summary>
+            <param name="projectId"></param>
+            <returns></returns>
+        </member>
+        <member name="M:NGitLab.ILabelClient.GetLabel(System.Int32,System.String)">
+            <summary>
+            Return a specified label from the project or null;
+            </summary>
+            <param name="projectId"></param>
+            <param name="Name"></param>
+            <returns></returns>
+        </member>
+        <member name="M:NGitLab.ILabelClient.CreateAsync(NGitLab.Models.LabelCreate)">
+            <summary>
+            Create a new label for a project.
+            </summary>
+            <param name="label"></param>
+            <returns></returns>
+        </member>
+        <member name="M:NGitLab.ILabelClient.EditAsync(NGitLab.Models.LabelEdit)">
+            <summary>
+            Edit the contents of an existing label.
+            </summary>
+        </member>
+        <member name="M:NGitLab.ILabelClient.DeleteAsync(NGitLab.Models.LabelDelete)">
+            <summary>
+            Delete a label from the project.
+            </summary>
+        </member>
+        <member name="M:NGitLab.INamespaceClient.Accessible">
+            <summary>
+            Get a list of projects accessible by the authenticated user.
+            </summary>
+        </member>
+        <member name="M:NGitLab.IProjectClient.Accessible">
+            <summary>
+            Get a list of projects accessible by the authenticated user.
+            </summary>
+        </member>
+        <member name="M:NGitLab.IProjectClient.Owned">
+            <summary>
+            Get a list of projects owned by the authenticated user.
+            </summary>
+        </member>
+        <member name="M:NGitLab.IProjectClient.All">
+            <summary>
+            Get a list of all GitLab projects (admin only).
+            </summary>
+        </member>
+        <member name="T:NGitLab.Sha1">
+            <summary>
+            Sha1 hash value representation.
+            </summary>
+        </member>
+    </members>
+</doc>
