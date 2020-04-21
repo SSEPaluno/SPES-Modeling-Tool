@@ -42,9 +42,10 @@
             this.VerifyButton = this.Factory.CreateRibbonButton();
             this.ImportButton = this.Factory.CreateRibbonButton();
             this.ExportButton = this.Factory.CreateRibbonButton();
-            this.CreateNewSPESProject = this.Factory.CreateRibbonButton();
+            this.v = this.Factory.CreateRibbonButton();
             this.GenerateSubmodelsButton = this.Factory.CreateRibbonButton();
             this.CreateNewEngineeringPath = this.Factory.CreateRibbonButton();
+            this.GenerateViews = this.Factory.CreateRibbonButton();
             this.CompleteInterfaceAutomata = this.Factory.CreateRibbonButton();
             this.tab1.SuspendLayout();
             this.group1.SuspendLayout();
@@ -64,9 +65,10 @@
             this.group1.Items.Add(this.VerifyButton);
             this.group1.Items.Add(this.ImportButton);
             this.group1.Items.Add(this.ExportButton);
-            this.group1.Items.Add(this.CreateNewSPESProject);
+            this.group1.Items.Add(this.v);
             this.group1.Items.Add(this.GenerateSubmodelsButton);
             this.group1.Items.Add(this.CreateNewEngineeringPath);
+            this.group1.Items.Add(this.GenerateViews);
             this.group1.Items.Add(this.CompleteInterfaceAutomata);
             this.group1.Label = "SPES Modelling Toolbox";
             this.group1.Name = "group1";
@@ -117,15 +119,15 @@
             this.ExportButton.ShowImage = true;
             this.ExportButton.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.ExportButton_Click);
             // 
-            // CreateNewSPESProject
+            // v
             // 
-            this.CreateNewSPESProject.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
-            this.CreateNewSPESProject.Enabled = false;
-            this.CreateNewSPESProject.Image = ((System.Drawing.Image)(resources.GetObject("CreateNewSPESProject.Image")));
-            this.CreateNewSPESProject.Label = "Create New Project";
-            this.CreateNewSPESProject.Name = "CreateNewSPESProject";
-            this.CreateNewSPESProject.ShowImage = true;
-            this.CreateNewSPESProject.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.CreateNewSPESProject_Click);
+            this.v.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.v.Enabled = false;
+            this.v.Image = ((System.Drawing.Image)(resources.GetObject("v.Image")));
+            this.v.Label = "Create New Project";
+            this.v.Name = "v";
+            this.v.ShowImage = true;
+            this.v.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.CreateNewSPESProject_Click);
             // 
             // GenerateSubmodelsButton
             // 
@@ -147,6 +149,15 @@
             this.CreateNewEngineeringPath.ShowImage = true;
             this.CreateNewEngineeringPath.Visible = false;
             this.CreateNewEngineeringPath.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.CreateNewEngineeringPath_Click);
+            // 
+            // GenerateViews
+            // 
+            this.GenerateViews.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.GenerateViews.Image = ((System.Drawing.Image)(resources.GetObject("GenerateViews.Image")));
+            this.GenerateViews.Label = "Generate Views";
+            this.GenerateViews.Name = "GenerateViews";
+            this.GenerateViews.ShowImage = true;
+            this.GenerateViews.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.GenerateViews_Click);
             // 
             // CompleteInterfaceAutomata
             // 
@@ -182,10 +193,11 @@
         internal Microsoft.Office.Tools.Ribbon.RibbonButton ExportButton;
         internal Microsoft.Office.Tools.Ribbon.RibbonDropDown ModelTargetDropDown;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton AboutButton;
-        internal Microsoft.Office.Tools.Ribbon.RibbonButton CreateNewSPESProject;
+        internal Microsoft.Office.Tools.Ribbon.RibbonButton v;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton CreateNewEngineeringPath;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton CompleteInterfaceAutomata;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton GenerateSubmodelsButton;
+        internal Microsoft.Office.Tools.Ribbon.RibbonButton GenerateViews;
     }
 
     partial class ThisRibbonCollection

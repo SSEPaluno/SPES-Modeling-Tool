@@ -127,6 +127,7 @@ namespace VisioAddin2010
                 this.GenerateSubmodelsButton.Enabled = true;
                 this.CompleteInterfaceAutomata.Enabled = true;
                 this.CreateNewEngineeringPath.Enabled = true;
+                this.GenerateViews.Enabled = true;
 
                 ModelTargetDropDown_SelectionChanged(null, null);
                 }
@@ -251,7 +252,6 @@ namespace VisioAddin2010
                     else if (activeModelverifier.GetType() == typeof(ExtendedFunctionNetwork))
                     {
                         this.spesapp.SystemFunctiontoPage();
-                        //this.spesapp.createInstanceModel();
                     }
                     else
                     {
@@ -290,11 +290,13 @@ namespace VisioAddin2010
                 {
                     this.CreateNewEngineeringPath.Visible = true;
                     this.CompleteInterfaceAutomata.Visible = false;
+                    this.GenerateViews.Visible = false;
                 }
                 else if (activeModelverifier.GetType() == typeof(FunktionsnetzNetwork) || activeModelverifier.GetType() == typeof(TechnicalViewpointNetwork))
                 {
                     this.CreateNewEngineeringPath.Visible = false;
                     this.CompleteInterfaceAutomata.Visible = true;
+                    this.GenerateViews.Visible = false;
                 }
                 else if (activeModelverifier.GetType() == typeof(ExtendedFunctionNetwork))
                 {
@@ -303,6 +305,7 @@ namespace VisioAddin2010
                     this.CompleteInterfaceAutomata.Visible = true;
                     this.VerifyButton.Enabled = true;
                     this.GenerateSubmodelsButton.Visible = true;
+                    this.GenerateViews.Visible = true;
                     Page activePage = (Page)application.ActivePage;
                     activePage.ShapeAddedEvent += ActivePage_ShapeAddedEvent;
                 }
@@ -316,11 +319,13 @@ namespace VisioAddin2010
                     this.CompleteInterfaceAutomata.Visible = false;
                     this.VerifyButton.Enabled = true;
                     this.GenerateSubmodelsButton.Visible = false;
+                    this.GenerateViews.Visible = false;
                 }
                 else
                 {
                     this.CompleteInterfaceAutomata.Visible = false;
                     this.CreateNewEngineeringPath.Visible = false;
+                    this.GenerateViews.Visible = false;
                 }
             }
             else
@@ -332,6 +337,7 @@ namespace VisioAddin2010
                 this.CreateNewSPESProject.Visible = true;
                 this.GenerateSubmodelsButton.Visible = false;
                 this.CompleteInterfaceAutomata.Visible = false;
+                this.GenerateViews.Visible = false;
             }
         }
 
@@ -396,9 +402,6 @@ namespace VisioAddin2010
                 MessageBox.Show(ex.Message, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
-
-        //kevin teil beginnt hier:
-        #region kevin 
 
         private SpesActivities spesapp;
 
@@ -555,6 +558,27 @@ namespace VisioAddin2010
                 }
             }
         }
-        #endregion
+        
+        private void GenerateViews_Click(object sender, RibbonControlEventArgs e)
+        {
+            if (activeModelverifier != null)
+            {
+                try
+                {
+                    if (activeModelverifier.GetType() == typeof(ExtendedFunctionNetwork))
+                    {
+                        this.spesapp.createInstanceModel();
+                    }
+
+                }
+                catch (Exception ex)
+                {
+                    System.Windows.Forms.MessageBox.Show("Error: " + ex.Message,
+                        "ERROR",
+                        System.Windows.Forms.MessageBoxButtons.OK,
+                        System.Windows.Forms.MessageBoxIcon.Error);
+                }
+            }
+        }
     }
 }

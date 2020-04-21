@@ -123,10 +123,11 @@ namespace VisioAddin2013
                     this.VerifyButton.Enabled = true;
                     this.ImportButton.Enabled = true;
                     this.ExportButton.Enabled = true;
-                    this.CreateNewSPESProject.Enabled = true;
+                    this.v.Enabled = true;
                     this.GenerateSubmodelsButton.Enabled = true;
                     this.CompleteInterfaceAutomata.Enabled = true;
                     this.CreateNewEngineeringPath.Enabled = true;
+                    this.GenerateViews.Enabled = true;
 
                     ModelTargetDropDown_SelectionChanged(null, null);
                 }
@@ -182,7 +183,7 @@ namespace VisioAddin2013
         {
             try
             {
-                //check before export. todo remove
+                //check before export.
                 if (!this.activeModelverifier.CanExport())
                     throw new Exception("Verification failed.");
 
@@ -251,7 +252,6 @@ namespace VisioAddin2013
                     else if (activeModelverifier.GetType() == typeof(ExtendedFunctionNetwork))
                     {
                         this.spesapp.SystemFunctiontoPage();
-                        this.spesapp.createInstanceModel();
                         
                     }
                     else
@@ -281,7 +281,7 @@ namespace VisioAddin2013
                 this.VerifyButton.Enabled = this.activeModelverifier.CanVerify;
                 this.ImportButton.Enabled = this.activeModelverifier.CanVerify;
                 this.ExportButton.Enabled = this.activeModelverifier.CanVerify;
-                this.CreateNewSPESProject.Visible = false;
+                this.v.Visible = false;
                 this.GenerateSubmodelsButton.Visible = Reflection.GetAllModelreferenceTypesInModule(activeModelverifier.GetType()).Any() ||
                    activeModelverifier.GetType() == typeof(StrukturellerKontextNetwork) ||
                    activeModelverifier.GetType() == typeof(FunktionellerKontextNetwork);
@@ -291,11 +291,13 @@ namespace VisioAddin2013
                 {
                     this.CreateNewEngineeringPath.Visible = true;
                     this.CompleteInterfaceAutomata.Visible = false;
+                    this.GenerateViews.Visible = false;
                 }
                 else if (activeModelverifier.GetType() == typeof(FunktionsnetzNetwork) || activeModelverifier.GetType() == typeof(TechnicalViewpointNetwork))
                 {
                     this.CreateNewEngineeringPath.Visible = false;
                     this.CompleteInterfaceAutomata.Visible = true;
+                    this.GenerateViews.Visible = false;
                 }
                 else if (activeModelverifier.GetType() == typeof(ExtendedFunctionNetwork))
                 {
@@ -303,6 +305,7 @@ namespace VisioAddin2013
                     this.CompleteInterfaceAutomata.Visible = true;
                     this.VerifyButton.Enabled = true;
                     this.GenerateSubmodelsButton.Visible = true;
+                    this.GenerateViews.Visible = true;
                     Page activePage = (Page)application.ActivePage;
                     activePage.ShapeAddedEvent += ActivePage_ShapeAddedEvent;
                 }
@@ -311,17 +314,19 @@ namespace VisioAddin2013
                 {
                     this.ImportButton.Enabled = false;
                     this.ExportButton.Enabled = false;
-                    this.CreateNewSPESProject.Visible = false;
+                    this.v.Visible = false;
                     this.GenerateSubmodelsButton.Visible =false;
                     this.CreateNewEngineeringPath.Visible = false;
                     this.CompleteInterfaceAutomata.Visible = false;
                     this.VerifyButton.Enabled = true;
                     this.GenerateSubmodelsButton.Visible = false;
+                    this.GenerateViews.Visible = false;
                 }
                 else
                 {
                     this.CompleteInterfaceAutomata.Visible = false;
                     this.CreateNewEngineeringPath.Visible = false;
+                    this.GenerateViews.Visible = false;
                 }
             }
             else
@@ -330,9 +335,10 @@ namespace VisioAddin2013
                 this.VerifyButton.Enabled = false;
                 this.ImportButton.Enabled = false;
                 this.ExportButton.Enabled = false;
-                this.CreateNewSPESProject.Visible = true;
+                this.v.Visible = true;
                 this.GenerateSubmodelsButton.Visible = false;
                 this.CompleteInterfaceAutomata.Visible = false;
+                this.GenerateViews.Visible = false;
             }
         }
 
@@ -351,7 +357,7 @@ namespace VisioAddin2013
 
                     //set SPES specifics
                     this.ModelTargetDropDown.Enabled = false;
-                    this.CreateNewSPESProject.Visible = false;
+                    this.v.Visible = false;
 
                     //load module based on definition
                     var type = documentReferencer.GetTypeFromFile(application.ActiveDocument.Name);
@@ -368,7 +374,7 @@ namespace VisioAddin2013
                 {
                     //set normal behaviour
                     this.ModelTargetDropDown.Enabled = true;
-                    this.CreateNewSPESProject.Visible = true;
+                    this.v.Visible = true;
                 }
 
                 ModelTargetDropDown_SelectionChanged(null, null);
@@ -397,9 +403,6 @@ namespace VisioAddin2013
                 MessageBox.Show(ex.Message, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
-
-        //kevin teil beginnt hier:
-        #region kevin 
 
         private SpesActivities spesapp;
 
@@ -556,6 +559,27 @@ namespace VisioAddin2013
                 }
             }
         }
-        #endregion
+
+        private void GenerateViews_Click(object sender, RibbonControlEventArgs e)
+        {
+            if (activeModelverifier != null)
+            {
+                try
+                {
+                    if (activeModelverifier.GetType() == typeof(ExtendedFunctionNetwork))
+                    {
+                        this.spesapp.createInstanceModel();
+                    }
+
+                }
+                catch (Exception ex)
+                {
+                    System.Windows.Forms.MessageBox.Show("Error: " + ex.Message,
+                        "ERROR",
+                        System.Windows.Forms.MessageBoxButtons.OK,
+                        System.Windows.Forms.MessageBoxIcon.Error);
+                }
+            }
+        }
     }
 }

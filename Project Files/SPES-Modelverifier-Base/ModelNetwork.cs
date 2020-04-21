@@ -371,7 +371,7 @@ namespace SPES_Modelverifier_Base
                             new FileInfo(System.IO.Path.Combine(this._visioApplication.MyShapesPath, file));
 
                 
-                        var webrequest = (HttpWebRequest) WebRequest.Create($"https://github.com/SSEPaluno/SPES-Modeling-Tool//blob/master/VisioStencils/{file}");
+                        var webrequest = (HttpWebRequest) WebRequest.Create($"https://github.com/SSEPaluno/SPES-Modeling-Tool/blob/master/VisioStencils/{file}");
                         webrequest.Method = "HEAD";
                         webrequest.Timeout = 5000;
                         HttpWebResponse webresponse = null;

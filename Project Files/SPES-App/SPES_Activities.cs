@@ -27,7 +27,6 @@ namespace SPES_App
     public class SpesActivities
     {
         Application _application;
-
         List<IVMaster> ActiveMasters
         {
             get
@@ -39,14 +38,14 @@ namespace SPES_App
                 return masters;
             }
         }
-
         public SpesActivities(Application a)
         {
+            //aktuelle Anwendung setzen
             this._application = a;
         }
-
         public void CreateSystem(SPES_DocumentReferencer pReferencer)
         {
+            //Methode wird aufgerufen, um initiale Viewpoints und Modelle zu erstellen
             IVShape systemshape = null;
             foreach (Shape s in this._application.ActivePage.Shapes)
             {
@@ -54,18 +53,18 @@ namespace SPES_App
             }
             IVPage p = this._application.ActiveDocument.Pages.Add();
             p.Name = systemshape.Text;
+            //aufrufen der Methode um einzelne Viewpoints der Visio App hinzuzufuegen
             CreateSystemElements(p, pReferencer);
             System.Windows.Forms.MessageBox.Show("Artifact Creation for Level 0 finished!");
         }
-
         public void CreateRectangle(string name)
         {
+            //erstelle Baumstruktur auf Page "System Overview"
             this._application.ActivePage.Name = "System Overview";
             IVShape s= this._application.ActivePage.DrawRectangle(1, 1, 3, 1.5);
             s.Text = name; s.SetCenter((10 / 2.54), (27.5 / 2.54));
             s.CellsSRC(1, 3, 0).FormulaU = "THEMEGUARD(RGB(255,255,255))";
         }
-
         private void CreateSystemElements( IVPage p, SPES_DocumentReferencer pReferencer)
         {
             //CellsSRC(1,11,4) gibt an, wo der Text positioniert werden soll
@@ -95,9 +94,9 @@ namespace SPES_App
             tvp = p.DrawRectangle(1, 1, 2.5, 3); tvp.Text = "Technical Viewpoint"; tvp.SetCenter(16.2/2.54, (22.8 / 2.54));
             tvp.CellsSRC(1, 11, 4).Formula = "0"; tvp.CellsSRC(1, 3, 0).FormulaU = "THEMEGUARD(RGB(255,255,255))";
             statusTvp = p.DrawOval(1, 1, 1.16, 1.16); statusTvp.SetCenter(16.2 / 2.54, 21.3 / 2.54); statusTvp.CellsSRC(1, 3, 0).FormulaU = "THEMEGUARD(RGB(255,0,0))";
-            //System.Windows.Forms.MessageBox.Show(("Create Documents?"));
+            //rufe Methode auf, welche die vier Viewpoints(RVP,FVP,LVP und TVP) erstellt
             CreateViewPointDocs(p.Name, this._application.ActiveDocument.Path, pReferencer);
-
+            //setzen von Hyperlinks auf erstellte Visio-Dateien
             rvphl=rvp.AddHyperlink();
             rvphl.Address = (System.IO.Path.Combine(this._application.ActiveDocument.Path, systemName.Text + "_RVP.vsdx"));
             fvphl = fvp.AddHyperlink();
@@ -108,9 +107,11 @@ namespace SPES_App
             tvphl.Address = (System.IO.Path.Combine(this._application.ActiveDocument.Path, systemName.Text + "_TVP.vsdx"));
  
         }
-
         public void CreateSheetsforMscReferences()
         {
+            //Erstelle für jede MSC-Referenz auf der aktuellen sichtbaren Seite in Visio ein neues Zeichenblatt
+            //dazu muss geprueft werden, ob es bereits eine Referenz als Zeichenblatt existiert andernfalls werden neue Zeichenblaetter erstellt
+
             List<IVShape> references = new List<IVShape>();
 
             foreach (var s in this._application.ActivePage.Shapes)
@@ -132,6 +133,7 @@ namespace SPES_App
 
             if (references.Count>=1)
             {
+                //lade entsprechende Stencils für bMSC
                 this._application.Documents.OpenEx("SMT_bMSC.vssx", 4);
                 foreach (var r in references)
                 {
@@ -147,6 +149,7 @@ namespace SPES_App
                     }
                     if (exist==false)
                     {
+                        //setze Hyperlink von MSC-Reference zu erstelltem Zeichenblatt
                         IVPage p = this._application.ActiveDocument.Pages.Add();
                         p.Name = r.Text;
                         IVHyperlink hl = r.Hyperlinks.Add();
@@ -156,19 +159,20 @@ namespace SPES_App
             }
             else
             {
+                //Nutzer ueber Abbruch informieren
                 System.Windows.Forms.MessageBox.Show("No MSC Reference found.");
             };
         }
-
         private void CreateViewPointDocs(string systemname, string path, SPES_DocumentReferencer pReferencer)
         {
-
+            //starte fuer jeden Viewpoint eine neue Visio Instanz, um die Modelle zu erstellen und zu speichern
             using (Application app = new Application())
             {
                 Application subapplic = this._application;
                 IntPtr appkey = new IntPtr(0);
                 IntPtr helpappkey = new IntPtr(0);
                 Application applic = null;
+                //um die Sichtbarkeit der Fenster zu setzen werden die Keys benoetigt und abgespeichert in den Variablen
                 foreach (var window in OpenWindowGetter.GetOpenWindows())
                 {
                     if (window.Value.Contains("Visio Professional"))
@@ -179,43 +183,43 @@ namespace SPES_App
                         else if (applic == this._application) { appkey = window.Key; };
                     };
                 }
+                //setzen des Fenster in den Hintergrund
                 OpenWindowGetter.SetForegroundWindow(helpappkey);
                 CreateemptyModels(app, path, systemname, pReferencer);
                 var doc = app.Documents.Add("");
-                CreateRvp(systemname, doc);
+                //Aufruf der Methode zum Erstellen des RVPs, sowie speichern und scliessen der Datei                CreateRvp(systemname, doc);
                 doc.SaveAs(System.IO.Path.Combine(path, systemname + "_RVP.vsdx"));
                 doc.Close();
                 
                 doc = app.Documents.Add("");
+                //Aufruf der Methode zum Erstellen des FVPs, sowie speichern und scliessen der Datei 
                 CreateFvp(systemname, doc);
-                //app.Documents.OpenEx("SMT_FN_Funktionsnetz.vssx", 4); app.Documents.OpenEx("SMT_IA.vssx", 4);
                 doc.SaveAs(System.IO.Path.Combine(path, systemname + "_FVP.vsdx"));
                 doc.Close();
                 pReferencer.AddAssignment(systemname + "_FVP.vsdx", typeof(FunktionsnetzNetwork).Name);
 
                 doc = app.Documents.Add("");
+                //Aufruf der Methode zum Erstellen des LVPs, sowie speichern und scliessen der Datei 
                 CreateLvp(systemname, doc);
-                //app.Documents.OpenEx("SMT_Class.vssx", 4); 
                 doc.SaveAs(System.IO.Path.Combine(path, systemname + "_LVP.vsdx"));
                 doc.Close();
                 pReferencer.AddAssignment(systemname + "_LVP.vsdx", typeof(LogicalViewpointNetwork).Name);
 
                 doc = app.Documents.Add("");
+                //Aufruf der Methode zum Erstellen des TVPs, sowie speichern und scliessen der Datei 
                 CreateTvp(systemname, doc);
-                //app.Documents.OpenEx("SMT_SM.vssx", 4);
-                //app.Documents.OpenEx("SMT_IA.vssx", 4);
                 doc.SaveAs(System.IO.Path.Combine(path, systemname + "_TVP.vsdx"));
                 doc.Close();
                 pReferencer.AddAssignment(systemname + "_TVP.vsdx", typeof(TechnicalViewpointNetwork).Name);
-
+                //setze Initiale Visio Instanz als sichtbar und beende die andere Visio Instanz
                 OpenWindowGetter.SetForegroundWindow(appkey);
                 app.Quit();
             }
             
         }
-
         public void SystemFunctiontoPage()
         {
+            //erstelle fuer jede Shape "System Function" ein neues Zeichenblatt mit Hyperlink
             List<IVShape> shapes = new List<IVShape>();
             foreach (IVShape shape in this._application.ActivePage.Shapes)
             {
@@ -236,6 +240,7 @@ namespace SPES_App
             }
             if (shapes.Count >= 1)
             {
+                //lade Stencil fuer Interface Automata und erstelle leeren Automaten mit Startzustand
                 IVDocument stencil = this._application.Documents.OpenEx("SMT_IA.vssx", 4);
                 IVMaster masterboundary = new IVMaster();
                 IVMaster masterstate = new IVMaster();
@@ -252,6 +257,7 @@ namespace SPES_App
                 }
                 foreach (var shape in shapes)
                 {
+                    //fuege erstelle Shapes der neu erstellten Seite an der uebergebenen Stelle ein und setzte Farbe auf schwarz
                     IVPage page = this._application.ActiveDocument.Pages.Add();
                     IVShape shapeh = page.Drop(masterboundary, 10.3 / 2.54, 20.5 / 2.54);
                     shapeh.CellsSRC(1, 3, 0).FormulaU = "THEMEGUARD(RGB(255,255,255))";
@@ -265,37 +271,36 @@ namespace SPES_App
             }
 
         }
-
         public void createInstanceModel()
         {
-                drawInstanceModel();  
-        }
-
-        private void drawInstanceModel()
-        {
-
+            //erstelle Fenster zur Auswahl der zu erstellenden Sicht
+            //Verwendung von RadioButtons zur Auswahl der Sicht
 
             System.Windows.Forms.Form form = new System.Windows.Forms.Form();
             form.Text = "Select Configuration Type";
+            form.Size = new Size(700,250);
             RadioButton rbutton1 = new RadioButton();
             RadioButton rbutton2 = new RadioButton();
-            rbutton1.Text = "Configuration of goal model based on configuration";
-            rbutton2.Text = "Configuration of DCM based on goal selection";
-            rbutton1.Size = new Size(300, 15);
-            rbutton2.Size = new Size(380,15);
-            rbutton1.Location = new Point(20, 20);
-            rbutton2.Location = new Point(20, 60);
             Button button1 = new Button();
-            button1.Text = "OK";
-            button1.Location = new Point(100, 100);
+
             form.Controls.Add(rbutton1);
             form.Controls.Add(rbutton2);
             form.Controls.Add(button1);
             form.AcceptButton = button1;
             form.CancelButton = button1;
-            form.Size = new Size(400,200);
+
+            rbutton1.Text = "Configuration of goal model based on configuration";
+            rbutton2.Text = "Configuration of DCM based on goal selection";
+            rbutton1.Size = new Size(600, 25);
+            rbutton2.Size = new Size(600,25);
+            rbutton1.Location = new Point(20, 20);
+            rbutton2.Location = new Point(20, 55);
+            button1.Text = "OK";
+            button1.Location = new Point(550, 100);
+            //zeige Fenster an
             form.ShowDialog();
             bool open = true;
+            //warte solange bis Fenster geschlossen worden ist( Auswahl muss nicht getroffen worden sein)
             while (open)
             {
                 if (form.Visible == false)
@@ -303,6 +308,8 @@ namespace SPES_App
                     open = false;
                 }
             }
+            //Zielsicht soll erstellt werden
+            // neues Fenster soll geoeffnet werden, mit allen Features/SystemTypes und einem weiteren Feld zur Angabe der gewuenschten Konfiguration
             if (rbutton1.Checked)
             {
                 System.Windows.Forms.Form form2 = new System.Windows.Forms.Form();
@@ -314,15 +321,17 @@ namespace SPES_App
                 List<Label> labels = new List<Label>();
                 int point = 20;
                 int counter = 0;
+                //erstelle fuer jede Shape "System Type" eine neue Textbox mit dem Text der Shape und einem weiteren Feld fuer die Anzahl des Systemtypens
                 foreach (var shape in this._application.ActivePage.Shapes)
                 {
                     if (shape.Name.Contains("System Type"))
                     {
                         Label label = new Label();
+                        label.Size = new Size(200,20);
                         label.Text = shape.Text;
                         label.Location = new Point(10, point);
                         TextBox box = new TextBox();
-                        box.Location = new Point(100, point);
+                        box.Location = new Point(250, point);
                         form2.Controls.Add(box);
                         form2.Controls.Add(label);
                         texte.Add(box);
@@ -331,13 +340,13 @@ namespace SPES_App
                         counter++;
                     }
                 }
-                button5.Location = new Point(200, point);
+                button5.Location = new Point(250, point);
                 form2.Controls.Add(button5);
-                double size = (double)point * 1.5;
-                form2.Size = new Size(350, Convert.ToInt32(size));
+                double size = (double)point * 1.6;
+                form2.Size = new Size(380, Convert.ToInt32(size));
                 form2.AcceptButton = button5;
                 form2.CancelButton = button5;
-
+                //speichere die gesetzten Werte in einem Array ab
                 String[,] values = new string[2, counter];
                 DialogResult dr = form2.ShowDialog();
                 if (DialogResult.Cancel == dr)
@@ -350,28 +359,37 @@ namespace SPES_App
                     }
                     
                 }
+                //rufe zunaechst Methode auf um Uebersicht uf einer neuen Seite zu kopieren und dann alle Modellelemente des Stencils DCM zu entfernen von der kopierten Seite
                 IVPage activepage = this._application.ActivePage;
                 IVPage pastedpage = selectShapesofGRL(activepage, values);
+                //rufe Methode auf welche unerreichbare Ziele zuruckgibt auf Basis der getroffenen KOnfiguration
                 List<IVShape> unreachablegoals= CheckConfiguration(activepage, pastedpage, values);
+                //rufe Methode auf zum Entfernen nicht erreichbarer Shapes und deren Unterelemente(Dekomposition)
                 if (unreachablegoals.Count != 0)
                 {
                     deleteshapes(unreachablegoals, pastedpage);
                 }
                 
             }
+            //Konfigurationssicht ausgewaehlt
             else if (rbutton2.Checked)
             {
+                //rufe zunaechst Methode auf um Uebersicht uf einer neuen Seite zu kopieren und dann alle Modellelemente des Stencils GRL zu entfernen von der kopierten Seite
                 IVPage activepage = this._application.ActivePage;
+                // speichere die ausgewaehlten Ziele in selction zwischen, da beim Loeschen der Elemente diese nicht mehr ueber this._application.ActiveWindow.Selection abrufbar sind.
                 IVSelection selection = this._application.ActiveWindow.Selection;
                 IVPage pastedpage= selectShapesofDCM(activepage,selection);
                 List<string> failures = new List<string>();
+                //rufe Methode auf, welche angibt ob eine Konfiguration moeglich ist, oder sich Ziele ausschliessen
                 bool valid=CheckGoalSelection(activepage, pastedpage, selection,failures);
                 if (valid)
                 {
+                    //Rufe Methode auf, welche die Konfigurationswerte der oberen Features basierend auf den anderen Werten bestimmt
                     CheckUpperFeature(pastedpage);
                 }
                 else
                 {
+                    // entferne kopierte Seite, falls keine Konfiguration moeglich und informiere Nutzer ueber gefundene Fehler
                     pastedpage.Delete(1);
                     //Throw exception with all found errors
                     string errors = "";
@@ -388,10 +406,12 @@ namespace SPES_App
         }
         private void CheckUpperFeature(IVPage pastedpage)
         {
+            // Methode berechnet das Minimum und Maximum der Features, welche aus mindestens zwei Unterfeatures besteht
             foreach (var st in pastedpage.Shapes)
             {
                 if (st.Name.Contains("System Type"))
                 {
+                    //pruefe ein und ausgehende Verbindungen
                     if (st.ConnectedShapes(VisConnectedShapesFlags.visConnectedShapesIncomingNodes,"").Count()>=1 && st.ConnectedShapes(VisConnectedShapesFlags.visConnectedShapesOutgoingNodes, "").Count() >= 2)
                     {
                         IVShape inlink = getInlink(st.Name, pastedpage);
@@ -400,6 +420,9 @@ namespace SPES_App
 
                         if (!inlink.Text.Equals("") && !inlink.Text.Equals("[0...0]"))
                         {
+
+                            //lese Min und max aus
+                            //beachten wenn Max =0 ->N
                             string[] invalues = inlink.Text.Split('[');
                             string[] invalues2 = invalues[1].Split(']');
                             string[] inminandmax = invalues2[0].Split('.');
@@ -410,6 +433,7 @@ namespace SPES_App
                         int[,] valueadd = new int[2, outlinks.Count];
                         int[,] valueor = new int[2, outlinks.Count];
                         int counter = 0;
+                        //durchlaufe alle Links der Shape und speichere Werte in den Arrays valueadd und valueor ab
                         foreach (var li in outlinks)
                         {
                             
@@ -437,10 +461,12 @@ namespace SPES_App
                             counter++;
                             }
                         }
+                        //rufe Methoden auf, um Minimal und Maximal Werte zu erhalten
                         int minor = getminimum(valueor);
                         int maxor = getSum(valueor, false);
                         int minand = getSum(valueadd,true);
                         int maxand = getSum(valueadd,false);
+                        //berechne neue Min und Max Werte
                         if (minand >= minlink) minlink = minand;
                         if (((maxor + maxand) <= maxlink) || maxlink == 0)
                         {
@@ -448,7 +474,7 @@ namespace SPES_App
                         }
                         
                        
-
+                        //setze Min und max nach berechneten neuen Werten basierend auf vorherigen Textinhalt
                         if (inlink.Text.Contains("OR"))
                         {
                             if (maxlink != 0) inlink.Text = "OR[" + minlink + "..." + maxlink + "]";
@@ -471,9 +497,10 @@ namespace SPES_App
                 }
             }
         }
-
         private bool unendlich(int[,] valueadd)
         {
+            //Methode prueft,ob ein maximaler Wert nicht genauer gesetzt worden ist (Bsp. 1...N) in diesem Fall dann 0
+            //Rueckgabe der Methode ist dann ein boolean Wert, welcher True liefert sollte es unendlich sein.
             bool unendlich = false;
 
             for (int i = 0; i < valueadd.GetLength(1); i++)
@@ -489,9 +516,10 @@ namespace SPES_App
             }
             return unendlich;
         }
-
         private int getSum(int[,] values, bool v)
         {
+            //Methode berechnet die Minimal oder Maximalsumme basierend auf dem Parameter v ,welcher bei True Minimum berechnet
+            //Rueckgabe ist die errechnete Summe
             int sum = 0;
 
             for (int i = 0; i < values.GetLength(1); i++)
@@ -510,6 +538,7 @@ namespace SPES_App
         }
         private int getminimum(int[,] valueor)
         {
+            //Methode bestimmt das Minimum fuer den OR-Fall kleinste Zahl > O
             int min = 0;
             
             for (int i = 0; i < valueor.GetLength(1); i++)
@@ -524,11 +553,15 @@ namespace SPES_App
         }
         private List<IVShape> getoutlinks(string name, IVPage pastedpage)
         {
+            //Methode liefert alle ausgehenden Verbindungen basierend auf dem Namen der uebergebenen Shape zurueck
             List<IVShape> outlinks = new List<IVShape>();
+            //durchlaufe alle Verbindungen auf der uebergebenen Page
             foreach (var l in pastedpage.Shapes)
             {
                 if (l.Name.Contains("Link"))
                 {
+                    //rufe entsprechende Zelleninformation ab und vergleiche ob Name der Shape mit Zelleninformation uebereinstimmt
+                    //zu beachten: "'" ist wichtig, da man so den kompletten Namen ueberprueft Bsp SystemType.38 und nicht SystemType.3 als korrekt ausgegeben bekommt
                     if (l.Cells("BegTrigger").FormulaU.Contains(name + "'"))
                     {
                         outlinks.Add(l);
@@ -539,14 +572,18 @@ namespace SPES_App
         }
         private IVShape getInlink(string name, IVPage pastedpage)
         {
+            //Methode liefert eingehnende Verbindung basierend auf dem Namen der uebergebenen Shape zurueck
             IVShape inlink = new IVShape();
+            //durchlaufe alle Verbindungen auf der uebergebenen Page
             foreach (var l in pastedpage.Shapes)
             {
                 if (l.Name.Contains("Link"))
                 {
+                    //rufe entsprechende Zelleninformation ab und vergleiche ob Name der Shape mit Zelleninformation uebereinstimmt
+                    //zu beachten: "'" ist wichtig, da man so den kompletten Namen ueberprueft Bsp SystemType.38 und nicht SystemType.3 als korrekt ausgegeben bekommt
                     if (l.Cells("EndTrigger").FormulaU.Contains(name + "'"))
                     {
-                        inlink = l;
+                        return l;
                     }
                 }
             }
@@ -556,30 +593,27 @@ namespace SPES_App
         {
             foreach (var s in unreachablegoals)
             {
-                //first delete unreachable goal
+                //loesche zuerst Zielshape durch Aufruf der Methode deleteshape()
               string stext=  s.Text;
                 deleteshape(s, pastedpage);
-                // durchlaufe solange das Modell, bis keine leere And/Or Nodes mehr vorhanden sind
+                // durchlaufe solange das Modell, bis keine leeren And/Or Nodes mehr vorhanden sind, pruefen durch Aufruf der Methode checkforemptynodes()
                 bool exists = checkforemptynodes(pastedpage); ;
                 while (exists)
                 {
+                    //hole zu entfernende Node und dazugehoerige Dekompositionslinks
                     IVShape emptyNode = getemptynode(pastedpage);
                     List<IVShape> decompositions = getdecompositions(emptyNode, pastedpage);
-                    //durchlaufe Liste der Dekompositionen und hole dazugehörige Ziele, Tasks, etc.
+                    //hole verbundene Shapes der Dekompositionslinks
                     List<IVShape> connectedShapes = getTargets(decompositions, pastedpage);
                     //loeschen der Node und dazugehöriger LInks+ TargetShapes
                      foreach (var d in decompositions)
                     {
-                        
-                        string name = d.Name;
-                        string textd = d.Text;
                         d.Delete();
-                        //deleteshape(d, pastedpage);
                     }
                     emptyNode.Delete();
+                    //durchlaufe Liste der Dekompositionen und hole dazugehörige Ziele, Tasks, etc.
                     foreach (var cs in connectedShapes)
                     {
-                        string deletedshape = cs.Text;
                         cs.Delete();
                     }
 
@@ -597,9 +631,12 @@ namespace SPES_App
         }
         private List<IVShape> getTargets(List<IVShape> decompositions, IVPage pastedpage)
         {
+            //Methode liefert verbundene Zielshapes basierend auf den uebergebenen Dekompositionslinks
             List<IVShape> elements = new List<IVShape>();
+            //durchlaufe jeden Link
             foreach (var d in decompositions)
             {
+                //durchlaufe Shapes auf der uebergebenen Page und pruefe ob Shape als Endtrigger in der entsprechenden Zelle vorkommt und in Liste elements abspeichern
                 foreach (var s in pastedpage.Shapes)
                 {
                     if (d.Cells("EndTrigger").FormulaU.Contains(s.Name+ "!"))
@@ -612,7 +649,9 @@ namespace SPES_App
         }
         private List<IVShape> getdecompositions(IVShape emptyNode, IVPage pastedpage)
         {
+            //Methode liefert eine Liste, welche die entsprechenden Links enthaelt, die mit der uebergebenenen Node verbunden sind
             List<IVShape> links = new List<IVShape>();
+            //durchlaufe alle Shapes der uebergebenen Seite und pruefe ob in der Zelle "BegTrigger" der Name der Node vorkommt
             foreach (var s in pastedpage.Shapes)
             {
                 if (s.Cells("BegTrigger").FormulaU.Contains(emptyNode.Name))
@@ -622,11 +661,14 @@ namespace SPES_App
         }
         private bool checkforemptynodes(IVPage pastedpage)
         {
+            //Methode prueft, ob es eine Node ohne ein Zielshape existiert
+            //sollte dies der Fall sein, wird der Wert true zurueckgegeben. Sonst false
             bool exists = false;
             foreach (var s in pastedpage.Shapes)
             {
                 if (s.Name.Contains("IOR-Node")|| s.Name.Contains("XOR-Node") || s.Name.Contains("AND-Node"))
                 {
+                    //sobald eine Node gefunden worden ist auf der Page, wid geprueft ob sowohl Ziel als auch Start der Node nicht mit einem Zielshape verbunden ist, wird der Wert exists auf true gesetzt.
                     if (!(s.Cells("EndTrigger").FormulaU.Contains("Goal")||
                         s.Cells("EndTrigger").FormulaU.Contains("Softgoal") ||
                         s.Cells("EndTrigger").FormulaU.Contains("Task") ||
@@ -646,9 +688,10 @@ namespace SPES_App
             }
             return exists;
         }
-
         private List<IVShape> getemptylinks(IVPage pastedpage)
         {
+            // Mehtode liefert eine Liste  von Links zurueck, die entweder kein Zielshape als Start oder Ende gesetzt haben
+            //Sonderfall Dekomposition: Betrachten nur des Targets
             List <IVShape> emptylinks = new List<IVShape>();
             foreach (var s in pastedpage.Shapes)
             {
@@ -688,11 +731,14 @@ namespace SPES_App
         }
         private IVShape getemptynode(IVPage pastedpage)
         {
+            //Methode returniert eine leere Node oder bleibt leer.
             IVShape emptynode = new IVShape();
             foreach (var s in pastedpage.Shapes)
             {
                 if (s.Name.Contains("IOR-Node") || s.Name.Contains("XOR-Node") || s.Name.Contains("AND-Node"))
                 {
+
+                    //sobald eine Node gefunden worden ist auf der Page, wid geprueft ob sowohl Ziel als auch Start der Node nicht mit einem Zielshape verbunden ist, diese Shape wird zurueckgegeben
                     if (!(s.Cells("EndTrigger").FormulaU.Contains("Goal") ||
                         s.Cells("EndTrigger").FormulaU.Contains("Softgoal") ||
                         s.Cells("EndTrigger").FormulaU.Contains("Task") ||
@@ -706,7 +752,7 @@ namespace SPES_App
                         s.Cells("BegTrigger").FormulaU.Contains("Indicator") ||
                         s.Cells("BegTrigger").FormulaU.Contains("Belief")))
                     {
-                        emptynode = s;
+                        return s;
                     }
                 }
             }
@@ -714,6 +760,8 @@ namespace SPES_App
         }
         private void deleteshape(IVShape s, IVPage pastedpage)
         {
+            //Methode loescht die uebergebene Shape von der uebergebenen Page
+            //dazu werden die Shapes auf der Seite durchlaufen, und verglichen, ob der Name der SHape mit dem Namen der uebergebenden Shape uebereinstimmt, Sollte dies der Fall sein wird die Shape geloscht.
             foreach (var shape in pastedpage.Shapes)
             {
                 if (shape.Name.Equals(s.Name))
@@ -876,9 +924,9 @@ namespace SPES_App
                             int iand = getIndexof(values, targetand.Text);
                             int valueand = Int32.Parse(values[1, iand]);
                             string minandmaxand = getMinandMax(and);
-                            string[] splitand = minandmax.Split(',');
-                            string minand = split[0];
-                            string maxand = split[1];
+                            string[] splitand = minandmaxand.Split(',');
+                            string minand = splitand[0];
+                            string maxand = splitand[1];
                             int miniand = 0;
                             int maxiand = 0;
                             Int32.TryParse(minand, out miniand);
@@ -916,6 +964,7 @@ namespace SPES_App
                     }
                 }
             }
+            //wenn eine Verletzung vorliegt, sollen alle gespeicherten Ziele entfernt werden
             if (invalid)
             {
                 unreachablegoals = new List<IVShape>();
@@ -927,6 +976,7 @@ namespace SPES_App
             //Durchlaufe Subshapes und speichere Werte als String getrennt durch Komma;
             string values = "";
             string helper = "";
+            //Kardinalitaet ist ein Teil(Gruppenelement) von der uebergebenen Shape-->durchlaufen der Shapes von s.Shapes
             foreach (var sub in s.Shapes)
             {
                 if (sub.Name.Contains("Cardinality"))
@@ -939,6 +989,7 @@ namespace SPES_App
         }
         private int getIndexof(string[,] values, string text)
         {
+            //Methode liefert die Stelle zurueck, an dem sich der Eintrag befindet wo der uebergebenene Text mit value uebereinstimmt
             int i = 0;
             for (int j = 0; j < values.GetLength(1); j++)
             {
@@ -951,6 +1002,7 @@ namespace SPES_App
         }
         private IVShape getSourceShape(IVShape s, IVPage activePage)
         {
+            //Methode liefert auf Basis der uebergebenen Verbindung die damit verbundene Shape zurueck
             IVShape source = new IVShape();
             string frm = s.Cells("BegTrigger").FormulaU;
             string helper = frm.Remove(frm.Length - 12);
@@ -966,8 +1018,8 @@ namespace SPES_App
         }
         private IVShape getTargetShape(IVShape s, IVPage activePage)
         {
+            //Methode liefert auf Basis der uebergebenen Verbindung die damit verbundene Shape zurueck
             IVShape target=new IVShape();
-            
             string to = s.Cells("EndTrigger").FormulaU;
             string helper = to.Remove(to.Length - 12);
             string toname = helper.Substring(11);
@@ -982,7 +1034,8 @@ namespace SPES_App
         }
         private List<IVShape> getAndrequires(IVShape s, IVPage activePage)
         {
-            //beachten: Target und Source sind vertauscht
+            //beachten: Target und Source sind vertauscht beiden Konnektorenshapes
+            //Methode liefert alle ANDRequires zurueck welche mit der uebergebenen Shape verbunden sind
             List<IVShape> ANDRequires = new List<IVShape>();
             foreach (var ands in activePage.Shapes)
             {
@@ -1000,6 +1053,8 @@ namespace SPES_App
         private List<IVShape> getOrRequires(IVShape s, IVPage activePage)
         {
             //beachten: Target und Source sind vertauscht
+
+            //Methode liefert alle ORRequires zurueck welche mit der uebergebenen Shape verbunden sind
             List<IVShape> ORRequires = new List<IVShape>();
             foreach (var ors in activePage.Shapes)
             {
@@ -1017,6 +1072,7 @@ namespace SPES_App
         }
         private bool CheckGoalSelection(IVPage activepage, IVPage pastedpage,IVSelection Selection,List<String> failures)
         {
+            //Methode prueft, anhand der ausgewaehlten Ziele, welche Konfigurationen moeglich sind
             bool validselection = true;
             foreach (var goal in Selection)
             {
@@ -1024,9 +1080,10 @@ namespace SPES_App
                 {
                     if (goal.Name.Equals(s.Name))
                     {
-                        //ermittle verbundene excludes und requires Links
+                        //ermittle verbundene excludes und requires Links die mit dem Ziel s verbunden sind
                         List <IVShape> excludes= getexcludesLink(s,activepage);
                         List <IVShape> requires = getrequiresLink(s, activepage);
+                        //durchlaufe exclude Links und setzte Kardinaliaet der System Type Links auf 0...0
                         foreach (var ex in excludes)
                         {
                             //hole System Type (Endtrigger of excludes link)
@@ -1056,12 +1113,14 @@ namespace SPES_App
                             }
 
                         }
+                        //durchlaufe alle requires Links inkl. AND und ORRequires zum Bestimmen der Kardinalitaeten
                         foreach (var req in requires)
                         {
-                            //hole System Type (Begtrigger of requires link)
+                            //hole System Type (Begtrigger of requires link) und alle verbundenen Requires Links
                             IVShape systemtype = getSourceShape(req, activepage);
                             List<IVShape> OrRequires = getOrRequires(req, activepage);
                             List<IVShape> AndRequires = getAndrequires(req, activepage);
+
                             foreach (var l in pastedpage.Shapes)
                             {
                                 if (l.Name.Contains("Link"))
@@ -1069,16 +1128,18 @@ namespace SPES_App
                                     string name = l.Cells("EndTrigger").FormulaU;
                                     if (l.Cells("EndTrigger").FormulaU.Contains(systemtype.Name + "'"))
                                     {
-                                        if(OrRequires.Count==0 && AndRequires.Count == 0)
+                                        //Fall 1: keine ORRequires und ANDRequires vorhanden
+                                        if (OrRequires.Count == 0 && AndRequires.Count == 0)
                                         {
                                             if (l.Text.Equals("") || l.Text.Contains("OR"))
                                             {
                                                 l.Text = getValueofLink(req);
                                             }
-                                            
-                                            //Fall mit Min und Max anpassen, falls schon Werte gesetzt sind
-                                            else if (l.Text.Contains("[")&&!l.Text.Equals("[0...0]"))
+
+                                            //Falls die Kardinalitaet 0...0 ist soll ein Fehler ausgegeben werden, unguelitge Zielauswahl
+                                            else if (l.Text.Contains("[") && !l.Text.Equals("[0...0]"))
                                             {
+                                                //Methode aufrufen, welche mitteilt, o Minimum oder maximum au Basis der Ziele erreicht werden koennen
                                                 String newvalues = checkvalues(getValueofLink(req), l.Text, true);
                                                 if (newvalues.Contains("error"))
                                                 {
@@ -1089,7 +1150,7 @@ namespace SPES_App
                                                 {
                                                     if (newvalues.Contains("AND"))
                                                     {
-                                                        string [] helper = newvalues.Split('D');
+                                                        string[] helper = newvalues.Split('D');
                                                         l.Text = helper[1];
                                                     }
                                                     else
@@ -1105,8 +1166,10 @@ namespace SPES_App
                                                 validselection = false;
                                             }
                                         }
+                                        //Fall : mind. 1 ORRequires und  kein ANDRequires vorhanden
                                         else if (OrRequires.Count != 0 && AndRequires.Count == 0)
                                         {
+                                            //fuege vor den Werten ein OR ein
                                             if (l.Text.Equals(""))
                                             {
                                                 l.Text = "OR" + getValueofLink(req);
@@ -1121,22 +1184,25 @@ namespace SPES_App
                                                 }
                                                 else
                                                 {
-                                                    l.Text = "OR"+newvalues;
+                                                    l.Text = "OR" + newvalues;
                                                 }
                                             }
                                             else if (l.Text.Equals("[0...0]"))
                                             {
+                                                //pruefe , ob es mind.1 Link gibt der erfuellt werden kann (! 0...0)
                                                 bool check = checkorrequires(activepage, pastedpage, OrRequires, req);
-                                                if (check)
+                                                if (!check)
                                                 {
                                                     failures.Add("No possible Configuration available regarding to System Type " + systemtype.Text);
                                                     validselection = false;
                                                 }
-                                                
+
                                             }
                                         }
+                                        //Fall : kein ORRequires und  mind.1  ANDRequires vorhanden
                                         else if (OrRequires.Count == 0 && AndRequires.Count != 0)
                                         {
+                                            // fuege vor den Werten ein AND ein
                                             if (l.Text.Equals("") || l.Text.Contains("OR"))
                                             {
                                                 l.Text = "AND" + getValueofLink(req);
@@ -1154,8 +1220,8 @@ namespace SPES_App
                                                     l.Text = newvalues;
                                                 }
                                             }
-                                                
-                                            else if(l.Text.Equals("[0...0]"))
+
+                                            else if (l.Text.Equals("[0...0]"))
                                             {
                                                 failures.Add("No possible Configuration available regarding to System Type " + systemtype.Text);
                                                 validselection = false;
@@ -1167,7 +1233,6 @@ namespace SPES_App
                                                 "Requires Links include OR and AND Addition, which is not valid.");
                                             validselection = false;
                                         }
-
                                     }
                                 }
                             }
@@ -1202,8 +1267,9 @@ namespace SPES_App
                                                 }
                                                 else if (l.Text.Equals("[0...0]"))
                                                 {
+                                                    //pruefe , ob es mind.1 Link gibt der erfuellt werden kann (! 0...0)
                                                     bool check = checkorrequires(activepage, pastedpage, OrRequires, req);
-                                                    if (check)
+                                                    if (!check)
                                                     {
                                                         failures.Add("No possible Configuration available regarding to System Type " + systemtype.Text);
                                                         validselection = false;
@@ -1262,6 +1328,7 @@ namespace SPES_App
         }
         private bool checkorrequires(IVPage activepage, IVPage pastedpage, List<IVShape> orRequires, IVShape req)
         {
+            //Methode prueft, ob es moeglich ist eine Konfiguration zu erstellen oder ob es excludes Beziehungen gibt die alle Faelle ausschliessen
             bool exists = false;
             foreach (var or in orRequires)
             {
@@ -1280,6 +1347,7 @@ namespace SPES_App
         }
         private string valueofsystemtype(String name, IVPage page)
         {
+            //Methode liefert den aktuellen Wert des Links zurueck, welcher mit dem Shape System.Type uebereinstimmt
             string value = "";
             foreach (var s in page.Shapes)
             {
@@ -1295,6 +1363,11 @@ namespace SPES_App
         }
         private string checkvalues(string v, string text, bool and)
         {
+            //Methode prueft, welche Werte moeglich sind und returniert das Ergebnis in einem String oder falls dies nicht moeglich ist als Text error zurueckliefert
+            //Value v ist der Wert der Requires Links welcher an die gesetzten Werte angepasst werden soll
+            //text ist der aktuelle Value des Links
+            // and gibt an ob es sich um einen ORRequires oder AND Requires handelt 
+            //beachten: sofoern beide AND/OR Requires leer sind wird trotzdem von AND ausgegangen
             string newvalues = "";
             int mina = 0;
             int maxa = 0;
@@ -1310,17 +1383,21 @@ namespace SPES_App
             Int32.TryParse(aminandmax[3], out maxa);
             Int32.TryParse(bminandmax[0], out minb);
             Int32.TryParse(bminandmax[3], out maxb);
+            //Fall 1 Min und Max stimmen ueberein bei beiden Paaren
             if (mina==minb && maxa == maxb)
             {
+                //Fall 1.a: AND requires
                 if (and)
                 {
+                    //unterscheiden, ob Maximum gesetzt ist oder nicht(unendlich)
                     if (maxa==0)
                     newvalues = "AND[" + mina + "..."  + "M]";
                     else newvalues = "AND[" + mina + "..." + maxa + "]";
                 }
-
+                //Fall 1.b: OR Requires
                 else
                 {
+                    //unterscheiden, ob Maximum gesetzt ist oder nicht(unendlich)
                     if (maxa == 0)
                     {
                         newvalues = "[" + mina + "..."  + "M]";
@@ -1329,54 +1406,67 @@ namespace SPES_App
                 }
                     
             }
+            //Fall 2: Min  stimmt ueberein bei beiden Paaren aer Max  vom neuen Wert ist kleiner als vorhandenes Maximum
             else if (mina == minb && maxa < maxb)
             {
                 {
-
+                    //Fall 2.a: AND requires
                     if (and)
                     {
+                        //unterscheiden, ob Maximum gesetzt ist oder nicht(unendlich)
                         if (maxa == 0)newvalues = "AND[" + mina + "..." +  maxb +"]";
                         else  newvalues = "AND[" + mina + "..." + maxa + "]";
                     }
 
+                    //Fall 2.b: OR Requires
                     else
                     {
+                        //unterscheiden, ob Maximum gesetzt ist oder nicht(unendlich)
                         if (maxa == 0)newvalues = "[" + mina + "..." +  maxb+ "]";
                         else newvalues = "[" + mina + "..." + maxa + "]";
                     }
 
                 }
             }
+            //Fall 3: Min  stimmt ueberein bei beiden Paaren aber Max  vom neuen Wert ist groeßer als vorhandenes Maximum
             else if (mina == minb && maxa > maxb)
             {
                 {
+                    //Fall 3.a: AND requires
                     if (and)
                     {
+                        //unterscheiden, ob Maximum gesetzt ist oder nicht(unendlich)
                         if (maxb == 0) newvalues = "AND[" + mina + "..." + maxa+ "]";
                         else newvalues = "AND[" + mina + "..." + maxb + "]";
                     }
-
+                    //Fall 3.b: OR Requires
                     else
                     {
+                        //unterscheiden, ob Maximum gesetzt ist oder nicht(unendlich)
                         if (maxb == 0)newvalues = "[" + mina + "..." +  maxa+"]";
                         else newvalues = "[" + mina + "..." + maxb + "]";
                     }
 
                 }
             }
+            //Fall 4: Maximum it gleich aber neues Minimum ist kleiner als vorhandenes
             else if (mina < minb && maxa == maxb) 
             {
                      if (and)
                     {
-                        if (maxb == 0) newvalues = "AND[" + minb + "..." + "M]";
+                    //unterscheiden, ob Maximum gesetzt ist oder nicht(unendlich)
+                    if (maxb == 0) newvalues = "AND[" + minb + "..." + "M]";
                         else newvalues = "AND[" + minb + "..." + maxa + "]";
                     }
                     else
                     {
-                        if (maxb == 0) newvalues = "[" + minb + "..." + "M]";
+                    //unterscheiden, ob Maximum gesetzt ist oder nicht(unendlich)
+                    if (maxb == 0) newvalues = "[" + minb + "..." + "M]";
                         else newvalues = "[" + minb + "..." + maxa + "]";
                     }
             }
+            //Fall 5 beide Werte sind kleiner als vorhandenen Werte
+            //pruefen, ob vorhandenes Minimum kleiner gleich neuer maximalwert ist
             else if (mina < minb && maxa < maxb)
             {
                 
@@ -1395,6 +1485,8 @@ namespace SPES_App
 
                 
             }
+            //Fall 6 neuer Minimum ist kleiner als Vorhandener und neuer Maximumwert ist groeßer als vorhandener
+            //pruefen, ob neues Minimum kleiner gleich vorhandener maximalwert ist
             else if (mina < minb && maxa > maxb)
             {
                 if (and)
@@ -1410,6 +1502,8 @@ namespace SPES_App
                     else newvalues = "error";
                 }
             }
+            //Fall 7: neuer Minimum ist groeßer als Vorhandener und Maximalwerte sind gleich
+            //pruefen, ob neues Minimum kleiner gleich vorhandener maximalwert ist
             else if (mina > minb && maxa == maxb)
             {
                 if (and)
@@ -1423,6 +1517,8 @@ namespace SPES_App
                     else newvalues = "[" + mina + "..." + maxa + "]";
                 }
             }
+            //Fall 7: neuer Minimum ist groeßer als Vorhandener und vorhandener Maximalwert ist groeßer
+            //pruefen, ob neues Minimum kleiner gleich vorhandener maximalwert ist
             else if (mina > minb && maxa < maxb)
             {
                 if (and)
@@ -1438,6 +1534,8 @@ namespace SPES_App
                     else newvalues = "error";
                 }
             }
+            //Fall 8: neuer Minimum ist groeßer als Vorhandener und neuer Maximalwert ist groeßer
+            //pruefen, ob neues Minimum kleiner gleich vorhandener maximalwert ist
             else if (mina > minb && maxa > maxb)
             {
                 if (and)
@@ -1457,6 +1555,8 @@ namespace SPES_App
         }
         private string getValueofLink(IVShape req)
         {
+            //Methode liefert den Wert, welcher am Requires LInk gesetzt ist zurueck
+            //dazu muessen die Shapes der einzelnen Gruppenshape durchlaufen werden und die Shape Cardinality gefunden werden
             string value = "";
             foreach (var sub in req.Shapes)
             {
@@ -1469,11 +1569,13 @@ namespace SPES_App
         }
         private List<IVShape> getrequiresLink(IVShape s, IVPage activepage)
         {
+            //Methode liefert alle Requires Links zurueck welche mit der uebergebenen Shape s verbunden sind wichtig von der Seite mit beiden Modellen 
             List<IVShape> requires = new List<IVShape>();
             foreach (var link in activepage.Shapes)
             {
                 if (link.Name.Contains("Requires Link"))
                 {
+                    //zu beachten EndTrigger beinhaltet System Type
                     if (link.Cells("EndTrigger").FormulaU.Contains(s.Name))
                     {
                         requires.Add(link);
@@ -1484,11 +1586,13 @@ namespace SPES_App
         }
         private List<IVShape> getexcludesLink(IVShape s, IVPage activepage)
         {
+            //Methode liefert alle Excludes Links zurueck welche mit der uebergebenen Shape s verbunden sind, wichtig von der Seite mit beiden Modellen 
             List<IVShape> excludes = new List<IVShape>();
             foreach (var link in activepage.Shapes)
             {
                 if (link.Name.Contains("Excludes"))
                 {
+                    //zu beachten BegTrigger beinhaltet System Type
                     if (link.Cells("BegTrigger").FormulaU.Contains(s.Name))
                     {
                         excludes.Add(link);
@@ -1499,6 +1603,7 @@ namespace SPES_App
         }
         private IVPage selectShapesofDCM(IVPage activePage, IVSelection selection)
         {
+            //Kopiere Page mit beiden Modellen und entferne alle Elemente die nicht von DCM auf der kopierten Seite sind ->Config View
             IVPage pastedpage = activePage.Duplicate();
             pastedpage.Name = "Configuration View_" + DateTime.Now;
             List<IVShape> shapestodelete = new List<IVShape>();
@@ -1515,6 +1620,7 @@ namespace SPES_App
                         shapestodelete.Add(s);
                     else
                     {
+                        //Abfangen von Decomposion und Contribution Links
                         if (!s.Name.Substring(0, 4).Equals("Link"))
                             shapestodelete.Add(s);
                     }
@@ -1522,10 +1628,12 @@ namespace SPES_App
                 }
 
             }
+            //loesche alle Shapes von der kopierten Seite
             foreach (var s in shapestodelete)
             {
                 s.Delete();
             }
+            //erstelle Rechteck mit den gesetzten Zielen zur Information
             IVShape info = pastedpage.DrawRectangle(1, 1, 3.5, 3.5);
 
             info.SetCenter(2,12);
@@ -1542,9 +1650,11 @@ namespace SPES_App
         }
         private IVPage selectShapesofGRL(IVPage activePage, string[,] values)
         {
+            //kopiere active Page(Übersicht der Abhängigkeiten zwischen Zielen und DCM) und loesche alle Shapes von DCM
             IVPage pastedpage = activePage.Duplicate();
             pastedpage.Name = "Goal View_" + DateTime.Now; ;
             List<IVShape> shapestodelete = new List<IVShape>();
+            //Durchlaufe alle Shapes auf der kopierten Seite und frage ab, dass die Shapes keine Elemente von GRL snd. 
             foreach (var s in pastedpage.Shapes)
             {
 
@@ -1568,6 +1678,8 @@ namespace SPES_App
                     s.Name.Contains("Dependency") ||
                     s.Name.Contains("Label:")))
                 {
+
+                    //Abfangen von AND und OR Requires
                     if (!s.Name.Contains("AND") || s.Name.Contains("OR"))
                         shapestodelete.Add(s);
                     else
@@ -1578,10 +1690,12 @@ namespace SPES_App
 
                 }
             }
+            //loesche gespeicherte Shapes von der kopierten Seite
             foreach (var s in shapestodelete)
             {
                 s.Delete();
             }
+            //erstelle Rechteck mit Text über die angegebene Konfiguration
             IVShape info = pastedpage.DrawRectangle(1,1,3.5,3.5);
             info.SetCenter(2, 12);
             string Text = "Configuration";
@@ -1594,23 +1708,10 @@ namespace SPES_App
             info.Text = Text;
             return pastedpage;
         }
-        private Boolean ChecklinkSystem(int id)
-        {
-            Boolean islink = true;
-            foreach (var s in this._application.ActivePage.Shapes)
-            {
-                if (s.ID==id)
-                    if (s.Name.Contains("Requires")||s.Name.Contains("Physical") || s.Name.Contains("Excludes"))
-                    {
-                        islink = false;
-                    }
-            }
-            return islink;
-        }
-
         private void CreateTvp(string system, IVDocument doc)
         {
-
+            // erstelle Zeichenblatt TVP in dem uebergebenen Dokument
+            //Erstelle ein Rechteck um darin modellieren zu koennen
             foreach (Page page in doc.Pages)
             {
                 page.Name = "TVP_" + system;
@@ -1623,9 +1724,10 @@ namespace SPES_App
                 header.CellsSRC(1, 3, 0).FormulaU = "THEMEGUARD(RGB(255,255,255))";
             }
         }
-
         private void CreateLvp(string system, IVDocument doc)
         {
+            // erstelle Zeichenblatt LVP in dem uebergebenen Dokument
+            //Erstelle ein Rechteck um darin modellieren zu koennen
             foreach (Page page in doc.Pages)
             {
                 page.Name = "LVP_" + system;
@@ -1638,9 +1740,10 @@ namespace SPES_App
                 header.CellsSRC(1, 3, 0).FormulaU = "THEMEGUARD(RGB(255,255,255))";
             }
         }
-
         private void CreateFvp(string system, IVDocument doc)
         {
+            // erstelle Zeichenblatt TVP in dem uebergebenen Dokument
+            //Erstelle ein Rechteck um darin modellieren zu koennen
             foreach (Page page in doc.Pages)
             {
                 page.Name = "FVP_" + system;
@@ -1655,11 +1758,11 @@ namespace SPES_App
 
             }
         }
-        
-
         private void CreateRvp(string systemname, IVDocument doc)
         {
-            //TODO neu erstellte Diagramme mit Shapesheet oeffnen
+            // erstelle Zeichenblatt RVP in dem uebergebenen Dokument
+            //Erstelle ein Rechteck als Uebersicht und erstelle weitere Shapes fuer die einzelnen Artefakte
+            
             IVPage page = new IVPage();
             IVShape header, kontext, neutral, bezogen;
             IVShape wissenskontext, funktKontext, struktKontext;
@@ -1752,24 +1855,22 @@ namespace SPES_App
             vphl.Address = (System.IO.Path.Combine(this._application.ActiveDocument.Path, systemname + "_RVP_BP.vsdx"));
 
         }
-
         private void CreateemptyModels(Application subapp, string path, string systemname, SPES_DocumentReferencer pReferencer)
         {
+            //erstelle mithilfe der Hilfsinstanz von Visio neue Dokumente und speichere diese ab, an dem selben Speicherpfad die bei der Gesmatauswahl angegeben worden ist.
+            //Betrifft die Artefakte des RVP
             var doct = subapp.Documents.Add("");
-            //subapp.Documents.OpenEx("SMT_CoK.vssx", 4);
             doct.SaveAs(System.IO.Path.Combine(path, systemname + "_RVP_CoK.vsdx"));
             doct.Close();
             pReferencer.AddAssignment(systemname + "_RVP_CoK.vsdx", typeof(WissenskontextNetwork).Name);
 
             doct = subapp.Documents.Add("");
-            //subapp.Documents.OpenEx("SMT_FuC.vssx", 4); 
             subapp.ActivePage.Name = "funktional Perspective";
             doct.SaveAs(System.IO.Path.Combine(path, systemname + "_RVP_foC.vsdx"));
             doct.Close();
             pReferencer.AddAssignment(systemname + "_RVP_foC.vsdx", typeof(FunktionellerKontextNetwork).Name);
 
             doct = subapp.Documents.Add("");
-            //subapp.Documents.OpenEx("SMT_SoC.vssx", 4); 
             subapp.ActivePage.Name = "static Perspective";
             doct.SaveAs(System.IO.Path.Combine(path, systemname + "_RVP_soC.vsdx"));
             doct.Close();
@@ -1777,47 +1878,41 @@ namespace SPES_App
 
             //Dokumente für Loesungsneutrale Modelle
             doct = subapp.Documents.Add("");
-            //subapp.Documents.OpenEx("SMT_GRL.vssx", 4);
             doct.SaveAs(System.IO.Path.Combine(path, systemname + "_RVP_Goals.vsdx"));
             doct.Close();
             pReferencer.AddAssignment(systemname + "_RVP_Goals.vsdx", typeof(ZielmodellNetwork).Name);
 
             doct = subapp.Documents.Add("");
-            //subapp.Documents.OpenEx("SMT_UCM.vssx", 4);
             doct.SaveAs(System.IO.Path.Combine(path, systemname + "_RVP_UCM.vsdx"));
             doct.Close();
             pReferencer.AddAssignment(systemname + "_RVP_UCM.vsdx", typeof(SzenarioUseCasesNetwork).Name);
 
-            doct = subapp.Documents.Add("");
-            //subapp.Documents.OpenEx("SMT_hMSC.vssx", 4); 
+            doct = subapp.Documents.Add(""); 
             doct.SaveAs(System.IO.Path.Combine(path, systemname + "_RVP_MSC.vsdx"));
             doct.Close();
             pReferencer.AddAssignment(systemname + "_RVP_MSC.vsdx", typeof(ScenarioNetwork).Name);
 
             //Dokumente für Loesungsbezogene Modelle
             doct = subapp.Documents.Add("");
-            //subapp.Documents.OpenEx("SMT_Class.vssx", 4);
             doct.SaveAs(System.IO.Path.Combine(path, systemname + "_RVP_stP.vsdx"));
             doct.Close();
             pReferencer.AddAssignment(systemname + "_RVP_stP.vsdx", typeof(StrukturellePerspektiveNetwork).Name);
 
             doct = subapp.Documents.Add("");
-            //subapp.Documents.OpenEx("SMT_Activity.vssx", 4);
             doct.SaveAs(System.IO.Path.Combine(path, systemname + "_RVP_fuP.vsdx"));
             doct.Close();
             pReferencer.AddAssignment(systemname + "_RVP_fuP.vsdx", typeof(FunktionellePerspektiveNetwork).Name);
 
             doct = subapp.Documents.Add("");
-            //subapp.Documents.OpenEx("SMT_SM.vssx", 4);
             doct.SaveAs(System.IO.Path.Combine(path,systemname+  "_RVP_BP.vsdx"));
             doct.Close();
             pReferencer.AddAssignment(systemname + "_RVP_BP.vsdx", typeof(VerhaltensperspektiveNetwork).Name);
 
         }
-
         public void SetHyperlink()
         {
             //NUr verwenden, wenn noch keine Hyperlinks gesetzt sind
+            //Für alle Elemente auf der Seite System Overview iwrd geschaut ob es eine entsprechende Seite exisitiert, wenn diese gefunden wird soll dahin ein Hyperlink gesetzt werden.
             IVPage overview = new IVPage();
             foreach (IVPage p in this._application.ActiveDocument.Pages)
             {
@@ -1842,6 +1937,8 @@ namespace SPES_App
         }
         public void FunctiontoPage()
         {
+            //Die Methode durchlaeuft die aktuelle Seite und erstellt auf Basis des funktionalen Kontextes fuer jede Shape vom Typ Context Function ein neues Zeichenblatt
+            //Sollte eine Seite bereits existieren wird eine Fehlermeldung ausgegeben
             List<IVShape> shapes = new List<IVShape>();
             foreach (IVShape shape in this._application.ActivePage.Shapes)
             {
@@ -1857,6 +1954,7 @@ namespace SPES_App
                 }
 
             }
+            //sollte es SHapes geben ohne Zeichenblattbezug, werden diese neu erstellt und auf dieser Seite wird eine Shape aus dem Stencil SMT_BeC hinzugefuegt
             if (shapes.Count >= 1)
             {
                 IVDocument stencil = this._application.Documents.OpenEx("SMT_BeC.vssx", 4);
@@ -1880,7 +1978,7 @@ namespace SPES_App
                         if (subshape.Text == "Context Entity/ Function") { subshape.Text = shape.Text; };
                     }
 
-
+                    //Setzen des Hyperlinks zu der erstellen Seite fuer die einzelnen Funktionen
                     page.Name = shape.Text;
                     IVHyperlink hl = shape.Hyperlinks.Add();
                     hl.SubAddress = page.Name;
@@ -1892,9 +1990,10 @@ namespace SPES_App
             };
 
         }
-
         public void EntitytoPage()
         {
+            //Die Methode durchlaeuft die aktuelle Seite und erstellt auf Basis des statisch strukturellen Kontextes fuer jede Shape vom Typ Context Entity (CE) ein neues Zeichenblatt
+            //Sollte eine Seite dafuer bereits existieren wird eine Fehlermeldung ausgegeben
             List<IVShape> shapes = new List<IVShape>();
             foreach( IVShape shape in this._application.ActivePage.Shapes)
             {
@@ -1911,6 +2010,7 @@ namespace SPES_App
                 }
                 
             }
+            //sollte es SHapes geben ohne Zeichenblattbezug, werden diese neu erstellt und auf dieser Seite wird eine Shape aus dem Stencil SMT_BeC hinzugefuegt
             if (shapes.Count >= 1)
             {
                 foreach (var shape in shapes)
@@ -1940,18 +2040,19 @@ namespace SPES_App
             };
 
         }
-
         public void CreateSubsystems(SPES_DocumentReferencer pReferencer)
         {
-            //bestimme Namen des übergeordneten Systems anhand des Seitennamens
+            //Methode erstellt die angegebenen Teilsysteme
+                //sowohl Dokumente, Hyperlinks als auch Aktualisierung der SystemOverview
+            //bestimme Namen des übergeordneten Systems anhand des Seitennamens (LVP_SYstemName)
 
             IVPage active = this._application.ActivePage;
             string systemname = active.Name.Substring(4);
 
-            //TODO: check if file is LVP_Overview datei (Logical Viewpoint) / Logical Design
+            //Werfe Fehlermeldung wenn Dokument nicht in Config Datei ist
             if(this._application.ActiveDocument.Name != $"{systemname}_LVP.vsdx")
                 throw new Exception("Active Document is not the LVP overview file.");
-
+            //hole ausgewaehlte Shapes
             IVSelection selects = this._application.ActiveWindow.Selection;
             List<IVShape> shapes = new List<IVShape>();
 
@@ -1980,7 +2081,7 @@ namespace SPES_App
                     shapes.Add(shape);
                 }
             }
-            //System.Windows.Forms.MessageBox.Show("Create Documents?");
+            
             //getPage "Systemübersicht"--> dazu Document holen mit passender Page
             //speichere aktuelle Applikation ab und suche Applikation mit der Page "Systemübersicht"
             IVDocument systemdoc = null;
@@ -2019,6 +2120,7 @@ namespace SPES_App
 
             if (found == false)
             {
+                //ermittle aktuelle Datei 
                 var file = new System.IO.DirectoryInfo(
                         new System.IO.FileInfo(_application.ActiveDocument.FullName).Directory.FullName)
                     .GetFiles().First(t => t.Name.Contains("_Overview.vsdx"));
@@ -2094,12 +2196,11 @@ namespace SPES_App
 
             }
 
-            //systemoverview.CreateSelection(VisSelectionTypes.visSelTypeAll).Align(VisHorizontalAlignTypes.visHorzAlignLeft, VisVerticalAlignTypes.visVertAlignMiddle) ;
             OpenWindowGetter.SetForegroundWindow(subapplickey);
         }
-
         private void CreateSubSystemElements(IVPage p, IntPtr appkey, SPES_DocumentReferencer pReferencer)
         {
+            //starte neue Visio Anwendung zum erstellen der Dokumente fuer die Teilsysteme
             using (Application app = new Application())
             {
                 Application subapplic = this._application;
@@ -2143,20 +2244,16 @@ namespace SPES_App
                 tvp = p.DrawRectangle(1, 1, 2.5, 3); tvp.Text = "Technical Viewpoint"; tvp.SetCenter(16.2 / 2.54, (22.8 / 2.54));
                 tvp.CellsSRC(1, 11, 4).Formula = "0"; tvp.CellsSRC(1, 3, 0).FormulaU = "THEMEGUARD(RGB(255,255,255))";
                 statusTvp = p.DrawOval(1, 1, 1.16, 1.16); statusTvp.SetCenter(16.2 / 2.54, 23.5 / 2.54); statusTvp.CellsSRC(1, 3, 0).FormulaU = "THEMEGUARD(RGB(255,0,0))";
-
+                //speichere einzelnen Viewpoints ab und setze Hyperlinks zu den oben erstellten Shapes
                 var doc = app.Documents.Add("");
                 CreateRvp(p.Name, doc);
-                doc.SaveAs(System.IO.Path.Combine(this._application.ActiveDocument.Path, systemName.Text + "_RVP.vsdx"));
-                    
+                doc.SaveAs(System.IO.Path.Combine(this._application.ActiveDocument.Path, systemName.Text + "_RVP.vsdx"));  
                 doc.Close();
                 rvphl = rvp.AddHyperlink();
                 rvphl.Address = (System.IO.Path.Combine(this._application.ActiveDocument.Path, systemName.Text + "_RVP.vsdx"));
 
                 doc = app.Documents.Add("");
                 CreateFvp(p.Name, doc);
-                //todo: load shapes -> load modules
-                //app.Documents.OpenEx("SMT_FN_Funktionsnetz.vssx", 4);
-                //app.Documents.OpenEx("SMT_IA.vssx", 4);
                 doc.SaveAs(System.IO.Path.Combine(this._application.ActiveDocument.Path, systemName.Text + "_FVP.vsdx"));
                 doc.Close();
                 pReferencer.AddAssignment(systemName.Text + "_FVP.vsdx", typeof(FunktionsnetzNetwork).Name);
@@ -2165,7 +2262,6 @@ namespace SPES_App
 
                 doc = app.Documents.Add("");
                 CreateLvp(p.Name, doc);
-                //app.Documents.OpenEx("SMT_Class.vssx", 4);
                 doc.SaveAs(System.IO.Path.Combine(this._application.ActiveDocument.Path, systemName.Text + "_LVP.vsdx"));
                 doc.Close();
                 pReferencer.AddAssignment(systemName.Text + "_LVP.vsdx", typeof(LogicalViewpointNetwork).Name);
@@ -2174,8 +2270,6 @@ namespace SPES_App
 
                 doc = app.Documents.Add("");
                 CreateTvp(p.Name, doc);
-                //app.Documents.OpenEx("SMT_SM.vssx", 4);
-                //app.Documents.OpenEx("SMT_IA.vssx", 4);
                 doc.SaveAs(System.IO.Path.Combine(this._application.ActiveDocument.Path, systemName.Text + "_TVP.vsdx"));
                 doc.Close();
                 pReferencer.AddAssignment(systemName.Text + "_TVP.vsdx", typeof(TechnicalViewpointNetwork).Name);
@@ -2186,7 +2280,6 @@ namespace SPES_App
             }
 
         }
-
         private double BerechneXPosition(double x, int sum, int counter)
         {
             // ermittle Position des Vorgängers
@@ -2197,13 +2290,9 @@ namespace SPES_App
             xwert = x + (counter * distance - (x / 2));
             return xwert;
         }
-
-        //createfor each Connection an Entry or Exit Point at the Boundary Shape
-        /// <summary>
-        /// erstellt input/output knoten am rand des interface automaten
-        /// </summary>
         public void CreateInandOutput()
         {
+            // erstelle input/output Knoten am Rand des Interfaceautomaten
             List<IVPage> pagesBound = new List<IVPage>();
             List<IVShape> cons;
             IVMaster input = new IVMaster();
@@ -2226,8 +2315,7 @@ namespace SPES_App
             }
             foreach (var item in pagesBound)
             {
-
-                
+                //wenn bereits Knoten vorhanden sind sollen diese entfernt werden und neu erstellt werden (wegen Positionierung)
                 cons = new List<IVShape>();
                 IVShape boundary = new IVShape();
                 List<IVShape> deleted = new List<IVShape>(); ;
@@ -2268,10 +2356,10 @@ namespace SPES_App
 
                 foreach (var inout in cons)
                 {
-
                     {
                         if (inout.Text.Contains("?"))
                         {
+                            //berechne Position der Shapes
                             double x = (((xvalue - (weight / 2.05)) + ((weight / (cons.Count + 1)) * count)));
                             double y = (yvalue + (height / 2) + 0.25);
                             IVShape inputshape = item.Drop(input, x / 2.54, y / 2.54);
@@ -2282,6 +2370,7 @@ namespace SPES_App
                         }
                         else if (inout.Text.Contains("!"))
                         {
+                            //berechne Position der Shapes
                             double x = (((xvalue - (weight / 2.05)) + ((weight / (cons.Count + 1)) * count)));
                             double y = (yvalue + (height / 2) + 0.25);
                             IVShape outputshape = item.Drop(output, x / 2.54, y / 2.54);
@@ -2299,6 +2388,7 @@ namespace SPES_App
         }
         public void verify_CREST_Uncertainty()
         {
+            //Method checks for syntactical correctness of the OUM
             List<String> Errors = new List<string>();
             System.Windows.Forms.MessageBox.Show("Start Verification");
             IVPage activePage = this._application.ActivePage;
@@ -2337,7 +2427,7 @@ namespace SPES_App
                 }
 
             }
-            //Add Errors to List
+            //Add Errors to List if elements are missing
             if (!uncertainty)
             {
                 Errors.Add("No Uncertainty exists.");
@@ -2368,7 +2458,7 @@ namespace SPES_App
             {
                 if (s.Name.Contains("Causes Link")|| s.Name.Contains("Amplifies Link"))
                 {
-                    // erhalte Source und Target
+                    // get Source and Target
 
                     string frm = s.Cells("BegTrigger").FormulaU;
                     string to = s.Cells("EndTrigger").FormulaU;
@@ -2390,7 +2480,7 @@ namespace SPES_App
             {
                 if ( s.Name.Contains("Effect Link"))
                 {
-                    // erhalte Source und Target
+                    // get Source and Target
                     string frm = s.Cells("BegTrigger").FormulaU;
                     string to = s.Cells("EndTrigger").FormulaU;
                     string helper1 = frm.Remove(frm.Length - 12);
@@ -2412,7 +2502,7 @@ namespace SPES_App
                 }
                 else if (s.Name.Contains("Mitigation Link"))
                 {
-                    // erhalte Source und Target
+                    // get Source and Target
                     string frm = s.Cells("BegTrigger").FormulaU;
                     string to = s.Cells("EndTrigger").FormulaU;
                     string helper1 = frm.Remove(frm.Length - 12);
@@ -2444,35 +2534,38 @@ namespace SPES_App
                     if (!mitigation) Errors.Add(s.Name + " " + s.Text + " has no Mitigation Links.");
                 }
             }
-//check Trace links
-foreach (var s in activePage.Shapes)
-{
-    if (s.Name.Contains("Trace Link"))
-    {
-        // erhalte Source und Target
-        string frm = s.Cells("BegTrigger").FormulaU;
-        string to = s.Cells("EndTrigger").FormulaU;
-        string helper1 = frm.Remove(frm.Length - 12);
-        string helper2 = to.Remove(to.Length - 12);
-        string fromname = helper1.Substring(11);
-        string toname = helper2.Substring(11);
-        if (!fromname.Contains("Activation Condition") &&
-                !fromname.Contains("Observation Point") &&
-                !fromname.Contains("Rationale")) Errors.Add("Source of Trace Links must be Activation Condition, Rationale or Observation Point.");
-        else
-        {
-            if (toname.Contains("Activation Condition") ||
-                toname.Contains("Observation Point") ||
-                toname.Contains("Rationale") ||
-                toname.Contains("Uncertainty") ||
-                toname.Contains("Relation Node") ||
-                toname.Contains("AND-Node") ||
-                toname.Contains("OR-Node"))
-                Errors.Add("Trace Link between the Shapes " + fromname + " " + getTextofShape(fromname, activePage) + " and " + toname + " " + getTextofShape(toname, activePage) + " is invalid. It must be connected to a Base Artifact.");
-        }
-    }
-}
+            //check Trace links
+            //Source should be Activation Condition, Observation Point or Rationale 
+            //Target should be a base artifact ->no Shape from OUM
+            foreach (var s in activePage.Shapes)
+            {
+                if (s.Name.Contains("Trace Link"))
+                {
+                    // get Source and Target
+                    string frm = s.Cells("BegTrigger").FormulaU;
+                    string to = s.Cells("EndTrigger").FormulaU;
+                    string helper1 = frm.Remove(frm.Length - 12);
+                    string helper2 = to.Remove(to.Length - 12);
+                    string fromname = helper1.Substring(11);
+                    string toname = helper2.Substring(11);
+                    if (!fromname.Contains("Activation Condition") &&
+                            !fromname.Contains("Observation Point") &&
+                            !fromname.Contains("Rationale")) Errors.Add("Source of Trace Links must be Activation Condition, Rationale or Observation Point.");
+                    else
+                    {
+                        if (toname.Contains("Activation Condition") ||
+                            toname.Contains("Observation Point") ||
+                            toname.Contains("Rationale") ||
+                            toname.Contains("Uncertainty") ||
+                            toname.Contains("Relation Node") ||
+                            toname.Contains("AND-Node") ||
+                            toname.Contains("OR-Node"))
+                            Errors.Add("Trace Link between the Shapes " + fromname + " " + getTextofShape(fromname, activePage) + " and " + toname + " " + getTextofShape(toname, activePage) + " is invalid. It must be connected to a Base Artifact.");
+                    }
+                }
+            }
             //check Relation Links
+            // Links between Nodes and Shapes of OUM are valid
             foreach (var s in activePage.Shapes)
             {
                 if (s.Name.Contains("Relation Link"))
@@ -2527,17 +2620,18 @@ foreach (var s in activePage.Shapes)
                     }
                 }
              }
+            
             //Relation Node ist mit mind. 1 Uncertainty verbunden
             //durchlaufe Shapes, wenn Relation Shape, dann hole ein und ausgehende Nachrichten
-            //wenn bei den ein und ausgehenden Nachrichten mind. einmal Shape "Uncertainty" vorkommt ansonsten Fehler werfen.
-            //UNcertainty,Rationale, OP, AC hat mind. 1 Relation LInk ein oder ausgehend und  OP, AC, Rat hat mind. 1 Trace Link
             foreach (var s in activePage.Shapes)
             {
+                //wenn bei den ein und ausgehenden Nachrichten mind. einmal Shape "Uncertainty" vorkommt ansonsten Fehler werfen.
                 if (s.Name.Contains("Uncertainty")||
-                    s.Name.Contains("Rationale") ||
-                    s.Name.Contains("Observation Point") ||
-                    s.Name.Contains("Activation Condition"))
+                s.Name.Contains("Rationale") ||
+                s.Name.Contains("Observation Point") ||
+                s.Name.Contains("Activation Condition"))
                 {
+                    //UNcertainty,Rationale, OP, AC hat mind. 1 Relation LInk ein oder ausgehend und  OP, AC, Rat hat mind. 1 Trace Link
                     if (!hasRelationLink(s.Name, activePage)) Errors.Add(s.Name + " "+ s.Text + " has no Relation Links.");
                     if (!s.Name.Contains("Uncertainty"))
                     {
@@ -2557,10 +2651,7 @@ foreach (var s in activePage.Shapes)
                 }
             }
                 
-
             //OR-AND Node Pruefen, dass mindestens zwei eingehende Links verbunden sind. -> pruefen, ob Summe der ein und ausgehenden Links mindestens 3 ist.
-
-           
             foreach (var shape in activePage.Shapes)
             {
                 if (shape.Name.Contains("OR-Node")|| shape.Name.Contains("AND-Node"))
@@ -2587,9 +2678,9 @@ foreach (var s in activePage.Shapes)
             else { System.Windows.Forms.MessageBox.Show("Verification successful!"); }
             
         }
-
         private string getTextofShape(string name, IVPage activePage)
         {
+            //Methode returniert den Text auf Basis des Namens einer Shapes
             string text = "";
             foreach (var s in activePage.Shapes)
             {
@@ -2598,9 +2689,9 @@ foreach (var s in activePage.Shapes)
 
             return text;
         }
-
         private bool checkmitigations(string name, IVPage activePage)
         {
+            //Methode prueft, ob der uebergebene Name als Ziel bei einer Mitigation Link vorkommt und das Ergebnis wird als Boolean zurueckgegeben
             bool exists = false;
             foreach (var s in activePage.Shapes) 
             {
@@ -2614,9 +2705,10 @@ foreach (var s in activePage.Shapes)
             }
             return exists;
         }
-
         private bool checkeffects(string name, IVPage activePage)
         {
+            //Methode prueft, ob der uebergebene Name als Quelle bei einem Effect Link vorkommt und das Ergebnis wird als Boolean zurueckgegeben
+
             bool exists = false;
             foreach (var s in activePage.Shapes)
             {
@@ -2630,9 +2722,10 @@ foreach (var s in activePage.Shapes)
             }
             return exists;
         }
-
         private bool hasTraceLink(String shapename, IVPage page)
         {
+            //Methode prueft, ob der uebergebene Name als Quelle bei einem Trace Link vorkommt und das Ergebnis wird als Boolean zurueckgegeben
+
             bool exists = false;
             foreach (var s in page.Shapes)
             {
@@ -2648,6 +2741,8 @@ foreach (var s in activePage.Shapes)
         }
         private bool hasRelationLink(String shapename, IVPage page)
         {
+            //Methode prueft, ob der uebergebene Name als Quelle oder Ziel bei einem Relation Link vorkommt und das Ergebnis wird als Boolean zurueckgegeben
+            // wichtig Quelle und Ziel betrachten, da Relation Link keine Direktion anzeigen
             bool exists = false;
             foreach (var s in page.Shapes)
             {
@@ -2667,6 +2762,7 @@ foreach (var s in activePage.Shapes)
         }
         private bool isconnectedtoRelationNode(String shapename, IVPage page)
         {
+            //Methode prueft, ob die uerbergebene Shape mit mind. einer Node verbunden ist, Rueckgabewert ist ein boolean
             bool exists = false;
             foreach (var s in page.Shapes)
             {
@@ -2688,6 +2784,8 @@ foreach (var s in activePage.Shapes)
         }
         private bool isconnectedtoUncertainty(String shapename, IVPage page)
         {
+            //Methode prueft, ob die uebergebene SHape Relation Node mit mind. 1 Uncertainty ueber einen Relation Link verbunden ist
+            //beachten ungerichtete Verbindung -> Source und Target betrachten
             bool exists = false;
             foreach (var s in page.Shapes)
             {
@@ -2709,6 +2807,8 @@ foreach (var s in activePage.Shapes)
         }
         public void verify_CREST_FunctionNet()
         {
+            //Methode ueberprueft die offene Seite auf syntaktische Fehler bezueglich der Erweiterung von Funktionsnetzwerken
+            //Fehler werden gesammelt und am Ende in einem gesamten Fenster dem Nutzer angezeigt
             List<String> Errors = new List<string>();
             System.Windows.Forms.MessageBox.Show("Start Verification");
             //Check existence of at least one system function, context function and system network function
@@ -2752,26 +2852,20 @@ foreach (var s in activePage.Shapes)
             {
                 if (s.Name.Contains("System Function") || s.Name.Contains("Context Function")|| s.Name.Contains("System Network Function"))
                 {
-
-
                     int[] con = s.ConnectedShapes((VisConnectedShapesFlags)0, "");
-
-
                     if (con.Count()<=0)
                     {
                         Errors.Add(s.Name + " "+ s.Text +" has no incoming or outgoing Messages.");
                     }
-                    
-
                 }
             }
+           
             //Check: Aggregation only valid between (Stereotype) Collaborative Functions (System/Context) and System Network Functions
             foreach (var s in activePage.Shapes)
             {
                 if (s.Name.Contains("Aggregation"))
                 {
                     // erhalte Source und Target
-
                     string frm = s.Cells("BegTrigger").FormulaU;
                     string to = s.Cells("EndTrigger").FormulaU;
                     string helper1 = frm.Remove(frm.Length-12);
@@ -2795,15 +2889,12 @@ foreach (var s in activePage.Shapes)
                     else
                     {
                         Errors.Add("Aggregation between " + GetName(fromname) + " and " + GetName(toname) + " is invalid.");
-                    }
-                                                         
+                    }                                    
                 }
- 
             }
 
             //Check: For each System Function exists a Page with an Interface Automaton
-            
-            foreach (var s in activePage.Shapes)
+             foreach (var s in activePage.Shapes)
             {
                 if (s.Name.Contains("System Function"))
                 {
@@ -2824,11 +2915,8 @@ foreach (var s in activePage.Shapes)
 
             //Check interactions of all system functions are existent in the interface automata with correct sign (!, ?)
             //durchlaufe alle Shapes mit Name "System Function"         
-            // durchlaufe für jede Interaction (Shape.Name.Contains("")) und speichere in zwei Listen ein und ausgehende Nachrichten für 
-            //die aktuelle SF
-            // Rufe Funktion X auf, welche prüft, ob alle ein und ausgehenden Nachrichten in verlinkter Page vorhanden sind
-            // auch ob gesetzte Zeichen (!/?) gesetzt sind
-
+            // durchlaufe für jede Interaction (Shape.Name.Contains("")) und speichere in zwei Listen ein und ausgehende Nachrichten für die aktuelle SF
+            // Rufe Funktion X auf, welche prüft, ob alle ein und ausgehenden Nachrichten in verlinkter Page vorhanden sind auch ob gesetzte Zeichen (!/?) gesetzt sind
             foreach (var s in activePage.Shapes)
             {
                
@@ -2841,7 +2929,6 @@ foreach (var s in activePage.Shapes)
                         if (i.Name.Contains("Interaction"))
                         {
                             // erhalte Source und Target
-
                             string frm = i.Cells("BegTrigger").FormulaU;
                             string to = i.Cells("EndTrigger").FormulaU;
                             string helper1 = frm.Remove(frm.Length - 12);
@@ -2917,9 +3004,9 @@ foreach (var s in activePage.Shapes)
             System.Windows.Forms.MessageBox.Show(errors,"Verification failed!");
             else { System.Windows.Forms.MessageBox.Show("Verification successful!"); }
         }
-
         private string GetStereotype(string name)
         {
+            //Methode liefert den vorhandenen Stereotypen der Funktion zurueck, welcher ein Unterelement der Shape ist
             string result = "";
             foreach (var s in this._application.ActivePage.Shapes)
             {
@@ -2936,26 +3023,22 @@ foreach (var s in activePage.Shapes)
 
             return result;
         }
-
-
         private string GetName(string name)
         {
+            //Methode liefert auf Basis des Namens der Shape den entsprechenden Textinhalt zurueck
             string result = "";
             foreach (var s in this._application.ActivePage.Shapes)
             {
                 if (s.Name == name)
                 {
                     result = s.Text;
-                    
                 }
-
             }
-
             return result;
         }
-
         private List<String> CheckMessages(String name,List<String> inc, List<String> outg)
         {
+            // Methode returniert eine Liste an Fehlern von Nachirichten, welche entweder nicht im Funktionsnetz oder im Interface Automaten vorhanden sind  
             List<String> faults = new List<string>();
             foreach (var p in this._application.ActiveDocument.Pages)
             {
@@ -3029,6 +3112,4 @@ foreach (var s in activePage.Shapes)
             return faults;
         }
     }
-
 }
-

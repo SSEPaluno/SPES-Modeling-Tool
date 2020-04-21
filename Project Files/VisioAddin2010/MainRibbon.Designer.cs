@@ -46,6 +46,7 @@
             this.GenerateSubmodelsButton = this.Factory.CreateRibbonButton();
             this.CreateNewEngineeringPath = this.Factory.CreateRibbonButton();
             this.CompleteInterfaceAutomata = this.Factory.CreateRibbonButton();
+            this.GenerateViews = this.Factory.CreateRibbonButton();
             this.tab1.SuspendLayout();
             this.group1.SuspendLayout();
             this.SuspendLayout();
@@ -67,6 +68,7 @@
             this.group1.Items.Add(this.CreateNewSPESProject);
             this.group1.Items.Add(this.GenerateSubmodelsButton);
             this.group1.Items.Add(this.CreateNewEngineeringPath);
+            this.group1.Items.Add(this.GenerateViews);
             this.group1.Items.Add(this.CompleteInterfaceAutomata);
             this.group1.Label = "SPES Modelling Toolbox";
             this.group1.Name = "group1";
@@ -159,6 +161,15 @@
             this.CompleteInterfaceAutomata.Visible = false;
             this.CompleteInterfaceAutomata.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.CompleteInterfaceAutomata_Click);
             // 
+            // GenerateViews
+            // 
+            this.GenerateViews.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.GenerateViews.Image = ((System.Drawing.Image)(resources.GetObject("GenerateViews.Image")));
+            this.GenerateViews.Label = "Generate Views";
+            this.GenerateViews.Name = "GenerateViews";
+            this.GenerateViews.ShowImage = true;
+            this.GenerateViews.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.GenerateViews_Click);
+            // 
             // MainRibbon
             // 
             this.Name = "MainRibbon";
@@ -186,6 +197,7 @@
         internal Microsoft.Office.Tools.Ribbon.RibbonButton CreateNewEngineeringPath;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton CompleteInterfaceAutomata;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton GenerateSubmodelsButton;
+        internal Microsoft.Office.Tools.Ribbon.RibbonButton GenerateViews;
     }
 
     partial class ThisRibbonCollection
